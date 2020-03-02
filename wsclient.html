@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8">
+  <head>
+    <script>
+      'use strict';
+      let $ = (q) => document.querySelector(q);
+
+      let time = [];
+      let latencies = [];
+
+      let hostname = location.hostname || 'localhost';
+      let ws = new WebSocket('ws://'+hostname+':8000/');
+      ws.onmessage = (event) => {
+          let data = event.data;
+          let latency = Date.now()-time.shift();
+          latencies.push(latency);
+          let avg = latencies.reduce((acc, x) => acc+x) / latencies.length;
+          $('#info').innerHTML = "latency: "+latency+"<br>latency (avg): "+avg;
+          $('#display').innerHTML = data+'<br>'+$('#display').innerHTML;
+      };
+      ws.onopen = (event) => {
+          let send = () => {
+              time.push(Date.now());
+              ws.send($('#input').value);
+              $('#input').value = '';
+          };
+          $('#send').addEventListener('click', send);
+          $('#input').addEventListener('keypress', (e) => {
+              if (e.keyCode == 13) send();
+          });
+      };
+    </script>
+  </head>
+  <body>
+    <div><input type="text" id="input"><button id="send">Send</button></div>
+    <div id="info"></div>
+    <div id="display"></div>
+  </body>
+</html>
